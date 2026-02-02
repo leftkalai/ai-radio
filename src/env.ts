@@ -19,6 +19,20 @@ const EnvSchema = z.object({
   OUTPUT_DIR: z.string().default('./output'),
   LOG_LEVEL: z.string().default('info'),
 
+  // Continuity memory file (local)
+  STATE_PATH: z.string().default('./output/state.json'),
+
+  // Voice / tone parameters
+  STATION_NAME: z.string().default('AI Radio'),
+  HOST_NAME: z.string().default('Sam'),
+  ENERGY_BASE: z.coerce.number().min(0).max(1).default(0.45),
+  ENERGY_VARIANCE: z.coerce.number().min(0).max(1).default(0.25),
+
+  // ElevenLabs tuning
+  ELEVEN_MODEL_ID: z.string().default('eleven_multilingual_v2'),
+  ELEVEN_STABILITY: z.coerce.number().min(0).max(1).default(0.28),
+  ELEVEN_SIMILARITY: z.coerce.number().min(0).max(1).default(0.75),
+
   PORT: z.coerce.number().int().positive().default(8787),
 
   // Demo mode: run one tick and exit
@@ -47,6 +61,14 @@ export function loadEnv(raw: NodeJS.ProcessEnv = process.env): AppEnv {
     COUNTRY: raw.COUNTRY,
     OUTPUT_DIR: raw.OUTPUT_DIR,
     LOG_LEVEL: raw.LOG_LEVEL,
+    STATE_PATH: raw.STATE_PATH,
+    STATION_NAME: raw.STATION_NAME,
+    HOST_NAME: raw.HOST_NAME,
+    ENERGY_BASE: raw.ENERGY_BASE,
+    ENERGY_VARIANCE: raw.ENERGY_VARIANCE,
+    ELEVEN_MODEL_ID: raw.ELEVEN_MODEL_ID,
+    ELEVEN_STABILITY: raw.ELEVEN_STABILITY,
+    ELEVEN_SIMILARITY: raw.ELEVEN_SIMILARITY,
     PORT: raw.PORT,
     DEMO_ONCE: raw.DEMO_ONCE
   };

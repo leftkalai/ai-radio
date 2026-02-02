@@ -20,5 +20,6 @@ logger.info(
 
 startRadio(schedule, config, logger, {
   outputDir: env.OUTPUT_DIR,
+  statePath: env.STATE_PATH,
   demoOnce: Boolean(env.DEMO_ONCE)
 });

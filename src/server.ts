@@ -13,6 +13,12 @@ import { contentGenerators } from './content/index.ts';
 import { generateAnnouncement } from './ai.ts';
 import { synthesizeSpeech } from './tts.ts';
 import { sanitizeFilename } from './utils.ts';
+import {
+  addRecent,
+  buildContinuityContext,
+  loadState,
+  saveState
+} from './state.ts';
 import { RadioCategory } from './types.ts';
 
 const env = loadEnv();
@@ -103,13 +109,33 @@ async function runJob(jobId: string) {
 
     const combinedRaw = rawSegments.join('\n');
 
+    const state = await loadState(env.STATE_PATH);
+    const recentContext = buildContinuityContext(state);
+
+    const energyBase = env.ENERGY_BASE;
+    const energyVar = env.ENERGY_VARIANCE;
+    const energyHint = Math.max(0, Math.min(1, energyBase + (Math.random() - 0.5) * 2 * energyVar));
+
     const announcement = await generateAnnouncement({
       category: categories.join('+'),
       raw: combinedRaw,
       time,
       config: cfg,
-      metadata: parsed.metadata
+      metadata: parsed.metadata,
+      continuity: {
+        stationName: env.STATION_NAME,
+        hostName: env.HOST_NAME,
+        energyHint,
+        recentContext
+      }
     });
+
+    addRecent(state, {
+      ts: new Date().toISOString(),
+      category: categories.join('+'),
+      text: announcement
+    });
+    await saveState(env.STATE_PATH, state);
 
     const fileBase = sanitizeFilename(`${time}-${categories.join('+')}-${jobId}`);
     const outputPath = path.resolve(env.OUTPUT_DIR, `${fileBase}.mp3`);

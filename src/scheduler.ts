@@ -4,6 +4,12 @@ import { contentGenerators } from './content/index.ts';
 import { generateAnnouncement } from './ai.ts';
 import { synthesizeSpeech } from './tts.ts';
 import { sanitizeFilename } from './utils.ts';
+import {
+  addRecent,
+  buildContinuityContext,
+  loadState,
+  saveState
+} from './state.ts';
 import { RadioCategory, RadioConfig, RadioSchedule } from './types.ts';
 
 type Logger = {
@@ -28,10 +34,11 @@ export function startRadio(
   schedule: RadioSchedule,
   config: RadioConfig,
   logger: Logger,
-  options?: { outputDir?: string; demoOnce?: boolean }
+  options?: { outputDir?: string; demoOnce?: boolean; statePath?: string }
 ) {
   const alreadyAnnounced = new Set<string>();
   const outputDir = options?.outputDir || './output';
+  const statePath = options?.statePath || `${outputDir}/state.json`;
   const demoOnce = options?.demoOnce === true;
 
   async function tick() {
@@ -55,13 +62,33 @@ export function startRadio(
 
         const combinedRaw = rawSegments.join('\n');
 
+        const state = await loadState(statePath);
+        const recentContext = buildContinuityContext(state);
+
+        const energyBase = process.env.ENERGY_BASE ? Number(process.env.ENERGY_BASE) : 0.45;
+        const energyVar = process.env.ENERGY_VARIANCE ? Number(process.env.ENERGY_VARIANCE) : 0.25;
+        const energyHint = Math.max(0, Math.min(1, energyBase + (Math.random() - 0.5) * 2 * energyVar));
+
         const announcement = await generateAnnouncement({
           category: categories.join('+') as RadioCategory,
           raw: combinedRaw,
           time: currentTime,
           config,
-          metadata: item.metadata
+          metadata: item.metadata,
+          continuity: {
+            stationName: process.env.STATION_NAME,
+            hostName: process.env.HOST_NAME,
+            energyHint,
+            recentContext
+          }
         });
+
+        addRecent(state, {
+          ts: new Date().toISOString(),
+          category: categories.join('+'),
+          text: announcement
+        });
+        await saveState(statePath, state);
 
         const fileBase = sanitizeFilename(`${currentTime}-${categories.join('+')}`);
         const outputPath = path.resolve(`${outputDir}/${fileBase}.mp3`);

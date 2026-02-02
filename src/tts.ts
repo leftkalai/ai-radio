@@ -20,10 +20,12 @@ export async function synthesizeSpeech(text: string, outputPath: string) {
       url,
       {
         text,
-        model_id: 'eleven_multilingual_v2',
+        model_id: process.env.ELEVEN_MODEL_ID || 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.4,
-          similarity_boost: 0.9
+          stability: process.env.ELEVEN_STABILITY ? Number(process.env.ELEVEN_STABILITY) : 0.28,
+          similarity_boost: process.env.ELEVEN_SIMILARITY
+            ? Number(process.env.ELEVEN_SIMILARITY)
+            : 0.75
         }
       },
       {
