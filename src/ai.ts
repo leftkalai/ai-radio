@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { looksMostlyEnglish } from './lang.ts';
 import { RadioCategory, RadioConfig } from './types.ts';
 
 function getOpenAI() {
@@ -67,14 +68,37 @@ export async function generateAnnouncement(params: {
     ? `${persona}\n${ttsRules}\n${continuityBlock}\nYou are doing a segment that introduces a song.\nImportant: Do NOT say the word "music" or the category name out loud.\nSong: "${songTitle}"${songArtist ? ` by ${songArtist}` : ''}.\nRaw notes:\n${raw}\n\nWrite a short DJ-style intro/outro (5–10 lines). Make it feel like part of an ongoing show. Do NOT always introduce yourself or the station. Use this language: ${language}.`
     : `${persona}\n${ttsRules}\n${continuityBlock}\nYou are doing a segment based on these topics: ${category}.\nImportant: Do NOT say the topic labels (e.g. "news", "weather", "traffic") out loud. Just speak the content naturally.\nRaw notes:\n${raw}\n\nWrite one flowing spoken segment (6–12 lines). Blend related info naturally. Make it feel continuous. Use this language: ${language}. Time context: around ${time}. City: ${config.location.city} (only if it fits naturally).`;
 
-  const openai = getOpenAI();
-  if (!openai) throw new Error('Missing OPENAI_API_KEY');
+  const openaiClient = getOpenAI();
+  if (!openaiClient) throw new Error('Missing OPENAI_API_KEY');
+  const openai = openaiClient; // non-null after guard
 
-  const response = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.7
-  });
+  async function call(extra: string | null) {
+    const response = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content:
+            language === 'Greek'
+              ? 'You MUST write in Greek. Do not output English sentences. Keep proper nouns/song titles as-is.'
+              : `You MUST write in ${language}.`
+        },
+        { role: 'user', content: extra ? `${prompt}\n\n${extra}` : prompt }
+      ],
+      temperature: 0.7
+    });
 
-  return response.choices[0].message?.content?.trim() ?? raw;
+    return response.choices[0].message?.content?.trim() ?? raw;
+  }
+
+  const force = String(process.env.FORCE_LANGUAGE || 'true').toLowerCase() !== 'false';
+
+  let out = await call(null);
+  if (force && config.language === 'el' && looksMostlyEnglish(out)) {
+    out = await call(
+      'Hard constraint: output MUST be Greek. If you are unsure, translate to Greek rather than keeping English. No [tags].'
+    );
+  }
+
+  return out;
 }

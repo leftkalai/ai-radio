@@ -5,8 +5,8 @@ const EnvSchema = z.object({
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
 
   ELEVENLABS_API_KEY: z.string().min(1, 'ELEVENLABS_API_KEY is required'),
-  ELEVENLABS_VOICE_ID: z.string().min(1).default('EXAVITQu4vr4xnSDxMaL'),
-
+  ELEVENLABS_VOICE_ID: z.string().min(1).default('JBFqnCBsd6RMkjVDRZzb'),
+//EXAVITQu4vr4xnSDxMaL
   // Optional content APIs
   NEWS_API_KEY: z.string().optional(),
   WEATHER_API_KEY: z.string().optional(),
@@ -32,6 +32,14 @@ const EnvSchema = z.object({
   ELEVEN_MODEL_ID: z.string().default('eleven_multilingual_v2'),
   ELEVEN_STABILITY: z.coerce.number().min(0).max(1).default(0.28),
   ELEVEN_SIMILARITY: z.coerce.number().min(0).max(1).default(0.75),
+
+  // Language enforcement
+  FORCE_LANGUAGE: z
+    .string()
+    .optional()
+    .transform((v) => (v || '').toLowerCase())
+    .transform((v) => v === '1' || v === 'true' || v === 'yes')
+    .default('true' as any),
 
   PORT: z.coerce.number().int().positive().default(8787),
 
@@ -69,6 +77,7 @@ export function loadEnv(raw: NodeJS.ProcessEnv = process.env): AppEnv {
     ELEVEN_MODEL_ID: raw.ELEVEN_MODEL_ID,
     ELEVEN_STABILITY: raw.ELEVEN_STABILITY,
     ELEVEN_SIMILARITY: raw.ELEVEN_SIMILARITY,
+    FORCE_LANGUAGE: raw.FORCE_LANGUAGE,
     PORT: raw.PORT,
     DEMO_ONCE: raw.DEMO_ONCE
   };
