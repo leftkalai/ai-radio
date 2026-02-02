@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "target": "ES2021",
+      "module": "ESNext",
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "moduleDetection": "force",
+      "allowImportingTsExtensions": true,
+      "noEmit": true,
+      "strict": true
+    },
+    "include": ["index.ts", "src"]
+  }
+  
