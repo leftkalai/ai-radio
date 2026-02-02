@@ -37,10 +37,20 @@ export function addRecent(
   if (state.recent.length > limit) state.recent = state.recent.slice(-limit);
 }
 
+function sanitizeForContext(text: string) {
+  // Remove obvious stage tags like [music], [SFX], etc.
+  let t = text.replaceAll(/\[[^\]]+\]/g, '');
+  // Collapse whitespace
+  t = t.replaceAll(/\s+/g, ' ').trim();
+  return t;
+}
+
 export function buildContinuityContext(state: RadioContinuityState, maxChars = 1200): string {
   const lines: string[] = [];
   for (const r of state.recent.slice(-6)) {
-    lines.push(`[${r.category}] ${r.text}`);
+    const cleaned = sanitizeForContext(r.text);
+    if (!cleaned) continue;
+    lines.push(`[${r.category}] ${cleaned}`);
   }
   let joined = lines.join('\n');
   if (joined.length > maxChars) joined = joined.slice(joined.length - maxChars);

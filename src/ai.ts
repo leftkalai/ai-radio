@@ -64,8 +64,8 @@ export async function generateAnnouncement(params: {
   const ttsRules = `TTS rules:\n- No emojis.\n- No URLs.\n- Avoid long parentheticals.\n- Prefer 1–2 sentences per line (use line breaks).\n- Write numbers as words.\n`;
 
   const prompt = isMusic
-    ? `${persona}\n${ttsRules}\n${continuityBlock}\nYou are doing a music segment.\nSong: "${songTitle}"${songArtist ? ` by ${songArtist}` : ''}.\nRaw notes:\n${raw}\n\nWrite a short DJ-style spoken intro/outro (5–10 lines). Add a light fun fact if you have it, but stay believable. Use this language: ${language}.`
-    : `${persona}\n${ttsRules}\n${continuityBlock}\nTopics: ${category}.\nRaw notes:\n${raw}\n\nWrite one flowing spoken segment (6–12 lines). Blend related info naturally. Use this language: ${language}. Time context: around ${time}. City: ${config.location.city} (only if it fits naturally).`;
+    ? `${persona}\n${ttsRules}\n${continuityBlock}\nYou are doing a segment that introduces a song.\nImportant: Do NOT say the word "music" or the category name out loud.\nSong: "${songTitle}"${songArtist ? ` by ${songArtist}` : ''}.\nRaw notes:\n${raw}\n\nWrite a short DJ-style intro/outro (5–10 lines). Make it feel like part of an ongoing show. Do NOT always introduce yourself or the station. Use this language: ${language}.`
+    : `${persona}\n${ttsRules}\n${continuityBlock}\nYou are doing a segment based on these topics: ${category}.\nImportant: Do NOT say the topic labels (e.g. "news", "weather", "traffic") out loud. Just speak the content naturally.\nRaw notes:\n${raw}\n\nWrite one flowing spoken segment (6–12 lines). Blend related info naturally. Make it feel continuous. Use this language: ${language}. Time context: around ${time}. City: ${config.location.city} (only if it fits naturally).`;
 
   const openai = getOpenAI();
   if (!openai) throw new Error('Missing OPENAI_API_KEY');
